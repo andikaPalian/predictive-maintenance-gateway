@@ -1,0 +1,61 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+  // output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum EquipmentStatus {
+  HEALTHY
+  WARNING
+  CRITICAL
+  MAINTENANCE
+}
+
+model Equipment {
+  id               String          @id @default(uuid())
+  name             String 
+  type             String 
+  location         String? 
+  status           EquipmentStatus @default(HEALTHY)
+  installationDate DateTime? 
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  maintenanceLogs MaintenanceLog[]
+  alerts          Alert[]
+
+  @@map("equipments")
+}
+
+model MaintenanceLog {
+  id              String   @id @default(uuid())
+  equipmentId     String
+  actionPerformed String 
+  performedBy     String 
+  date            DateTime @default(now())
+
+  equipment Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+
+  @@map("maintenance_logs")
+}
+
+model Alert {
+  id             String   @id @default(uuid())
+  equipmentId    String
+  message        String 
+  severity       String 
+  isAcknowledged Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  equipment Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+
+  @@map("alerts")
+}
