@@ -4,7 +4,7 @@ const telemetrySchema = new mongoose.Schema(
   {
     equipmentId: {
       type: String,
-      required: false,
+      required: true,
       index: true,
       description: "Ralating to UUID in PostgreSQL equipment table",
     },
