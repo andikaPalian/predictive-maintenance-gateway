@@ -31,6 +31,12 @@ const telemetrySchema = new mongoose.Schema(
       enum: ["ONLINE", "OFFLINE", "ERROR"],
       default: "ONLINE",
     },
+    syncStatus: {
+      type: String,
+      enum: ["PENDING", "SYNCED", "FAILED"],
+      default: "PENDING",
+      index: true,
+    },
   },
   {
     timeseries: {
