@@ -8,7 +8,7 @@ export const connectRabbitMQ = async () => {
 
   try {
     connection = await amqplib.connect(RABBIT_URL);
-    channel = await connection.createChannel();
+    channel = await connection.createConfirmChannel();
 
     await channel.assertQueue("sensor_data", { durable: true });
 
