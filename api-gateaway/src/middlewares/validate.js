@@ -1,7 +1,11 @@
 import { AppError } from "../utils/error.js";
 
 export const validateBody = (schema) => (req, res, next) => {
-  const result = schema.safeParse(req.body);
+  const result = schema.safeParse({
+    body: req.body,
+    query: req.query,
+    params: req.params,
+  });
 
   if (!result.success) {
     const formattedErrors = result.error.issues.map((issue) => ({
@@ -15,7 +19,9 @@ export const validateBody = (schema) => (req, res, next) => {
     return next(error);
   }
 
-  req.body = result.data;
+  if (result.data.body) req.body = result.data.body;
+  if (result.data.query) req.query = result.data.query;
+  if (result.data.params) req.params = result.data.params;
 
   next();
 };
