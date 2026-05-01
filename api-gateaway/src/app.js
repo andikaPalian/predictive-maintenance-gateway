@@ -9,6 +9,7 @@ import startTelemetryRetryWorker from "./workers/telemetryRetry.worker.js";
 import { telemetryRouter } from "./modules/telemetry/telemetry.routes.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 import logger from "./utils/logger.js";
+import { equipmentRouter } from "./modules/equipment/equipment.routes.js";
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -24,6 +25,7 @@ app.get("/health", (req, res) => {
 });
 
 app.use("/api/telemetry", telemetryRouter);
+app.use("/api/equipments", equipmentRouter);
 
 app.use(errorHandler);
 
