@@ -47,11 +47,17 @@ model MaintenanceLog {
   @@map("maintenance_logs")
 }
 
+enum AlertSeverity {
+  INFO
+  WARNING
+  CRITICAl
+}
+
 model Alert {
   id             String   @id @default(uuid())
   equipmentId    String
   message        String 
-  severity       String 
+  severity       AlertSeverity 
   isAcknowledged Boolean  @default(false)
   createdAt      DateTime @default(now())
 
