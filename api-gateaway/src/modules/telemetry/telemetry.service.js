@@ -45,7 +45,7 @@ const analyzeAnomalies = async (telemetryData) => {
     if (metrics.rpm >= 3600) {
       await alertService.createAlert({
         equipmentId: equipmentId,
-        meesage: `DANGEROUS: RPM is dangerously high (${metrics.rpm} RPM). Risk of catastrophic failure!`,
+        message: `DANGEROUS: RPM is dangerously high (${metrics.rpm} RPM). Risk of catastrophic failure!`,
         severity: "CRITICAL",
       });
     } else if (metrics.rpm <= 500 && metrics.rpm > 0) {
