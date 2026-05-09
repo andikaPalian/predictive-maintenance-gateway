@@ -16,7 +16,7 @@ const analyzeAnomalies = async (telemetryData) => {
         message: `DANGEROUS: Temperature is dangerously high (${metrics.temperature}°C). Overheat risk!`,
         severity: "CRITICAL",
       });
-    } else if (metrics.temperature >= 50) {
+    } else if (metrics.temperature >= 85) {
       await alertService.createAlert({
         equipmentId: equipmentId,
         message: `WARNING: Temperature is going dangerously high (${metrics.temperature}°C). Overheat risk!`,
