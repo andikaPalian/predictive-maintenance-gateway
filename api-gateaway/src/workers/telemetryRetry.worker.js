@@ -1,11 +1,11 @@
 import cron from "node-cron";
-import Telemetry from "../modules/telemetry/telemetry.model.js";
 import { publishToQueue } from "../services/rabbitmq.service.js";
+import TelemetryOutbox from "../modules/telemetry/telemetryOutbox.model.js";
 
 const startTelemetryRetryWorker = () => {
   cron.schedule("*/1 * * * *", async () => {
     try {
-      const failedData = await Telemetry.find({ syncStatus: "FAILED" }).limit(100).lean();
+      const failedData = await TelemetryOutbox.find().limit(100).lean();
       if (failedData.length === 0) return;
 
       console.log(
@@ -14,11 +14,11 @@ const startTelemetryRetryWorker = () => {
 
       for (const record of failedData) {
         try {
-          await publishToQueue("sensor_data", record);
-          await Telemetry.updateOne({ _id: record._id }, { $set: { syncStatus: "SYNCED" } });
+          await publishToQueue("sensor_data", record.payload);
+          await TelemetryOutbox.findByIdAndDelete(record._id);
         } catch (error) {
           console.warn(
-            `[Telemetry Retry Worker] Failed to resend record ID: ${record._id}. Will retry later.`,
+            `[Telemetry Retry Worker] Failed to resend record ID: ${record._id}. Error: ${error.message}`,
           );
           break;
         }

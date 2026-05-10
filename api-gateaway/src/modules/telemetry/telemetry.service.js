@@ -1,4 +1,5 @@
 import Telemetry from "./telemetry.model.js";
+import TelemetryOutbox from "./telemetryOutbox.model.js";
 import { publishToQueue } from "../../services/rabbitmq.service.js";
 import * as alertService from "../alerts/alert.service.js";
 import logger from "../../utils/logger.js";
@@ -59,38 +60,40 @@ const analyzeAnomalies = async (telemetryData) => {
 };
 
 export const processAndSaveTelemetry = async (telemetryData) => {
-  let currentSyncStatus = "PENDING";
-  let rabbitMqError = null;
+  // let currentSyncStatus = "PENDING";
+  // let rabbitMqError = null;
+  const newTelemetry = await Telemetry.create({
+    equipmentId: telemetryData.equipmentId,
+    timestamp: telemetryData.timestamp || new Date(),
+    metrics: telemetryData.metrics,
+    status: telemetryData.status,
+    // syncStatus: currentSyncStatus,
+  });
 
   try {
     // Try to send data to RabbitMQ
     await publishToQueue("sensor_data", telemetryData);
 
     // If successful, update syncStatus to SYNCED
-    currentSyncStatus = "SYNCED";
+    // currentSyncStatus = "SYNCED";
   } catch (error) {
     // If there's an error sending to RabbitMQ, update syncStatus to FAILED
-    currentSyncStatus = "FAILED";
-    rabbitMqError = error.message;
+    // currentSyncStatus = "FAILED";
+    // rabbitMqError = error.message;
+    logger.warn(`[TELEMETRY SERVICE] RabbitMQ failed. Saving to Outbox... Error: ${error.message}`);
+
+    await TelemetryOutbox.create({ payload: newTelemetry });
   }
 
-  const newTelemetry = await Telemetry.create({
-    equipmentId: telemetryData.equipmentId,
-    timestamp: telemetryData.timestamp || new Date(),
-    metrics: telemetryData.metrics,
-    status: telemetryData.status,
-    syncStatus: currentSyncStatus,
-  });
-
-  if (currentSyncStatus === "SYNCED") {
-    logger.info(
-      `[TELEMETRY SERVICE] Data saved and sent to RabbitMQ successfully. ID: ${newTelemetry._id}`,
-    );
-  } else {
-    logger.warn(
-      `[TELEMETRY SERVICE] Data saved but RabbitMQ failed. ID: ${newTelemetry._id} | Error: ${rabbitMqError}`,
-    );
-  }
+  // if (currentSyncStatus === "SYNCED") {
+  //   logger.info(
+  //     `[TELEMETRY SERVICE] Data saved and sent to RabbitMQ successfully. ID: ${newTelemetry._id}`,
+  //   );
+  // } else {
+  //   logger.warn(
+  //     `[TELEMETRY SERVICE] Data saved but RabbitMQ failed. ID: ${newTelemetry._id} | Error: ${rabbitMqError}`,
+  //   );
+  // }
 
   // Fallback anomaly detection
   analyzeAnomalies(telemetryData).catch((err) => {
