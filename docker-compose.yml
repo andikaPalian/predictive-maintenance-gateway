@@ -43,7 +43,7 @@ services:
     container_name: pm_api_gateaway
     ports:
       - "3000:3000"
-    restart: unless-stoppped
+    restart: unless-stopped
     depends_on:
       - rabbitmq
       - postgres
