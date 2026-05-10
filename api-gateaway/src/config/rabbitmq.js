@@ -1,7 +1,21 @@
 import amqplib from "amqplib";
+import logger from "../utils/logger.js";
 
-let connection;
-let channel;
+let connection = null;
+let channel = null;
+let isReconnecting = false;
+
+const handleReconnect = () => {
+  isReconnecting = true;
+  connection = null;
+  channel = null;
+
+  logger.info("[RABBITMQ CONFIG] Will try to reconnect to RabbitMQ...");
+
+  setTimeout(() => {
+    connectRabbitMQ();
+  }, 5000);
+};
 
 export const connectRabbitMQ = async () => {
   const RABBIT_URL = process.env.RABBITMQ_URL;
@@ -12,18 +26,34 @@ export const connectRabbitMQ = async () => {
 
     await channel.assertQueue("sensor_data", { durable: true });
 
-    console.log("Connected to RabbitMQ");
+    logger.info(
+      "[RABBITMQ CONFIG] Successfully connected to RabbitMQ and confirm channel created.",
+    );
+
+    isReconnecting = false;
+
+    // Event listeners for automatic reconnection
+    connection.on("error", (err) => {
+      logger.error(`[RABBITMQ CONFIG] Connection error: ${err.message}`);
+      if (!isReconnecting) handleReconnect();
+    });
+
+    connection.on("close", () => {
+      logger.warn("[RABBITMQ CONFIG] Connection closed. Attempting to reconnect...");
+      if (!isReconnecting) handleReconnect();
+    });
+
     return channel;
   } catch (error) {
     console.error("Failed to connect to RabbitMQ", error);
-    process.exit(1);
+    if (!isReconnecting) handleReconnect();
   }
 };
 
 export const getRabbitChannel = () => {
-  if (!channel) {
-    throw new Error("RabbitMQ channel not initialized.");
-  }
+  // if (!channel) {
+  //   throw new Error("RabbitMQ channel not initialized.");
+  // }
 
   return channel;
 };
@@ -32,7 +62,8 @@ export const closeRabbitMQ = async () => {
   try {
     await channel.close();
     await connection.close();
+    logger.info("[RABBITMQ CONFIG] Connection closed gracefully.");
   } catch (error) {
-    console.error("Failed to close RabbitMQ connection", error);
+    logger.error(`[RABBITMQ CONFIG] Failed to close connection: ${error.message}`);
   }
 };
