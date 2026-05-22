@@ -6,7 +6,7 @@ import aio_pika
 from dotenv import load_dotenv
 from src.ml_engine.predictor import AnomalyPredictor
 
-logger = logging.getLogger("AnomalyDetectorTrainer")
+logger = logging.getLogger("RabbitMQConsumer")
 load_dotenv()
 
 
