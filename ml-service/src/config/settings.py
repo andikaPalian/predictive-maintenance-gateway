@@ -20,6 +20,9 @@ class Settings:
     MODEL_DIR: Path = BASE_DIR / "src" / "ml_engine" / "models"
     ANOMALY_MODEL: Path = MODEL_DIR / "anomaly_pipeline.pkl"
 
+    RUL_MODEL: Path = MODEL_DIR / "rul_lstm.keras"
+    RUL_SCALER: Path = MODEL_DIR / "rul_scaler.pkl"
+
     # RABBITMQ CONFIGURATIOn
     RABBITMQ_URL: str = os.getenv("RABBITMQ_URL", "")
     CONSUME_QUEUE: str = os.getenv("QUEUE_NAME", "sensor_data")
