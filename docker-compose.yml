@@ -12,6 +12,12 @@ services:
       RABBITMQ_DEFAULT_PASS: ${RABBIT_PASS}
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
   postgres:
     image: postgres:15-alpine
@@ -24,6 +30,11 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   mongodb:
     image: mongo:latest
@@ -35,6 +46,11 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASS}
     volumes:
       - mongo_data:/data/db
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   api-gateaway:
     build:
@@ -45,9 +61,12 @@ services:
       - "3000:3000"
     restart: unless-stopped
     depends_on:
-      - rabbitmq
-      - postgres
-      - mongodb
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
     environment:
       - PORT=3000
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASS}@pm_postgres:5432/${POSTGRES_DB}?schema=public
