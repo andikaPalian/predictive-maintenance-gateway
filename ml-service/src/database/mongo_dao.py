@@ -1,15 +1,15 @@
-import os
-import logging
 from datetime import datetime, timezone
 from motor.motor_asyncio import AsyncIOMotorClient
+from src.utils.logger import get_logger
+from src.config.settings import settings
 
-logger = logging.getLogger("MongoDAO")
+logger = get_logger("MongoDAO")
 
 
 class MongoDAO:
     def __init__(self):
-        self.mongo_uri = os.getenv("MONGO_URI")
-        self.collection_name = "anomaly_predictions"
+        self.mongo_uri = settings.MONGO_URI
+        self.collection_name = settings.PREDICTION_COLLECTION
 
         if not self.mongo_uri:
             raise RuntimeError("MONGO_URI environment variable is not set")

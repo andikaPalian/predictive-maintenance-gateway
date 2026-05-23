@@ -1,31 +1,23 @@
 import os
 import asyncio
-import logging
 import pandas as pd
-from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 import joblib
+from src.utils.logger import get_logger
+from src.config.settings import settings
 
 # Logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-logger = logging.getLogger("AnomalyDetectorTrainer")
-
-# Load env variable
-load_dotenv()
+logger = get_logger("AnomalyDetectorTrainer")
 
 
 class AnomalyDetectorTrainer:
     def __init__(self):
-        self.mongo_uri = os.getenv("MONGO_URI")
-        self.collection_name = os.getenv("COLLECTION_NAME")
-        self.model_save_dir = os.getenv("MODEL_SAVE_DIR")
+        self.mongo_uri = settings.MONGO_URI
+        self.collection_name = settings.TELEMETRY_COLLECTION
+        self.model_save_dir = settings.MODEL_DIR
 
         # Hyperparameter
         self.contamination = 0.1

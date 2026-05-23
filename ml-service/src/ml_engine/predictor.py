@@ -1,9 +1,10 @@
 import os
-import logging
 import joblib
 import pandas as pd
+from src.utils.logger import get_logger
 
-logger = logging.getLogger("AnomalyDetectorTrainer")
+# Logging
+logger = get_logger("AnomalyPredictor")
 
 
 class AnomalyPredictor:

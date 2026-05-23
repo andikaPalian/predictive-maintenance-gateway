@@ -1,15 +1,12 @@
-import logging
 import uvicorn
 from fastapi import FastAPI, Request
 from contextlib import asynccontextmanager
 from src.workers.consumer import TelemetryConsumer
+from src.utils.logger import configure_logging, get_logger
+from src.config.settings import settings
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-logger = logging.getLogger("FastAPI_Main")
+configure_logging()
+logger = get_logger("FastAPI_Main")
 
 
 @asynccontextmanager
@@ -36,9 +33,9 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Predictive Maintenance ML Service",
-    description="Microservice AI for Anomaly Detection Real Time",
-    version="1.0.0",
+    title=settings.PROJECT_NAME,
+    description=settings.PROJECT_DESCRIPTION,
+    version=settings.VERSION,
     lifespan=lifespan,
 )
 
@@ -57,4 +54,4 @@ async def heal_check(request: Request):
 
 
 if __name__ == "__main__":
-    uvicorn.run("src.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("src.main:app", host=settings.HOST, port=settings.PORT, reload=True)

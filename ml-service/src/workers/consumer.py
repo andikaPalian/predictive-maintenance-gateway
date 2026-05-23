@@ -1,21 +1,19 @@
-import os
 import json
-import logging
 import asyncio
 import aio_pika
-from dotenv import load_dotenv
 from src.ml_engine.predictor import AnomalyPredictor
 from src.database.mongo_dao import MongoDAO
+from src.utils.logger import get_logger
+from src.config.settings import settings
 
-logger = logging.getLogger("RabbitMQConsumer")
-load_dotenv()
+logger = get_logger("RabbitMQConsumer")
 
 
 class TelemetryConsumer:
     def __init__(self):
-        self.rabbitmq_url = os.getenv("RABBITMQ_URL")
-        self.consume_queue = os.getenv("QUEUE_NAME")
-        self.publish_queue = "anomaly_alerts"
+        self.rabbitmq_url = settings.RABBITMQ_URL
+        self.consume_queue = settings.CONSUME_QUEUE
+        self.publish_queue = settings.PUBLISH_QUEUE
         self.predictor = AnomalyPredictor()
         self.mongo_dao = MongoDAO()
         self.connection = None
