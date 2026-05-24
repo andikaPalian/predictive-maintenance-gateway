@@ -1,5 +1,6 @@
 import os
 import joblib
+import warnings
 import numpy as np
 import pandas as pd
 from keras.models import load_model
@@ -7,6 +8,7 @@ from src.utils.logger import get_logger
 from src.config.settings import settings
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+warnings.filterwarnings("ignore", category=UserWarning, module="sklearn")
 
 # Logging
 logger = get_logger("AnomalyPredictor")
