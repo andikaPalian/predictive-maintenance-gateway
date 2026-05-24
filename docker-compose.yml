@@ -81,6 +81,36 @@ services:
     networks:
       - pm_network
 
+  ml-service:
+    build:
+      context: ./ml-service
+      dockerfile: Dockerfile
+    container_name: pm_ml_service
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    environment:
+      - MONGO_URI=mongodb://${MONGO_USER}:${MONGO_PASS}@pm_mongodb:27017/predictive_maintenance?authSource=admin
+      - RABBITMQ_URL=amqp://${RABBIT_USER}:${RABBIT_PASS}@pm_rabbitmq:5672
+    networks:
+      - pm_network
+    # Prevent ML Service from consuming all of server RAM
+    deploy:
+      resources:
+        limits:
+          # Maximum use of 1 CPU Core
+          cpus: "1.0"
+          # Maximum use of 1GB of RAM
+          memory: 1G
+        reservations:
+          # Minimum RAM guarantee
+          memory: 256M
+
 volumes:
   rabbitmq_data:
   postgres_data:
