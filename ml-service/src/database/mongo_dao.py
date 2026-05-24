@@ -26,8 +26,14 @@ class MongoDAO:
                 "equipmentId": equipment_id,
                 "timestamp": datetime.now(timezone.utc),
                 "metrics": metrics,
-                "is_anomaly": prediction_result.get("is_anomaly", False),
-                "status": prediction_result.get("status", "UNKNOWN"),
+                "ai_analysis": {
+                    "is_anomaly": prediction_result.get("is_anomaly", False),
+                    "anomaly_status": prediction_result.get(
+                        "anomaly_status", "UNKNOWN"
+                    ),
+                    "rul_value": prediction_result.get("rul_value", -1.0),
+                    "rul_status": prediction_result.get("rul_status", "UNKNOWN"),
+                },
             }
 
             result = await self.collection.insert_one(document)
