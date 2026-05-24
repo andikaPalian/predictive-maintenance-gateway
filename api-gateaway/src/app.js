@@ -12,6 +12,7 @@ import logger from "./utils/logger.js";
 import { equipmentRouter } from "./modules/equipment/equipment.routes.js";
 import { maintenanceRouter } from "./modules/maintenance/maintenance.routes.js";
 import { alertRouter } from "./modules/alerts/alert.routes.js";
+import { startAlertListener } from "./workers/aiAlerts.listener.js";
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -37,6 +38,7 @@ const startServer = async () => {
   try {
     await connectDb();
     await connectRabbitMQ();
+    await startAlertListener();
     startTelemetryRetryWorker();
 
     app.listen(port, () => {
