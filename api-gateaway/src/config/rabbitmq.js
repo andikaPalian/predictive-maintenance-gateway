@@ -51,11 +51,38 @@ export const connectRabbitMQ = async () => {
 };
 
 export const getRabbitChannel = () => {
-  // if (!channel) {
-  //   throw new Error("RabbitMQ channel not initialized.");
-  // }
+  if (!channel) {
+    logger.error(
+      "[RABBITMQ CONFIG] Attempted to get channel, but it is not initialized or currently reconnecting.",
+    );
+    throw new Error("RabbitMQ channel not ready.");
+  }
 
   return channel;
+};
+
+export const consumeFromQueue = async (queueName, callback) => {
+  try {
+    const channel = getRabbitChannel();
+    if (!channel) throw new Error("Rabbitmq channel not initialized.");
+
+    // RAM protection, dont make Node.js take more than 10 message at the same time
+    channel.prefetch(10);
+
+    await channel.assertQueue(queueName, { durable: true });
+
+    channel.consume(queueName, async (msg) => {
+      if (msg !== null) {
+        await callback(msg, channel);
+      } else {
+        logger.warn(`[RABBITMQ CONFIG] Consumer cancelled by server for queue: ${queueName}`);
+      }
+    });
+
+    logger.info(`[RABBITMQ CONFIG] Successfully listening to queue: ${queueName}`);
+  } catch (error) {
+    logger.error(`[RABBITMQ CONFIG] Failed to consume from queue ${queueName}: ${error}`);
+  }
 };
 
 export const closeRabbitMQ = async () => {
