@@ -2,11 +2,13 @@ FROM node:24-alpine AS builder
 
 WORKDIR /app
 
+RUN apk add --no-cache openssl
+
 COPY package*.json ./
 
 COPY prisma ./prisma/
 
-RUN npm install
+RUN npm ci
 
 RUN npx prisma generate
 
@@ -18,9 +20,11 @@ ENV NODE_ENV=production
 
 WORKDIR /app
 
+RUN apk add --no-cache openssl
+
 COPY package*.json ./
 
-RUN npm install --omit=dev
+RUN npm ci --omit=dev
 
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
