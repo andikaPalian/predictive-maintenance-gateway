@@ -18,6 +18,8 @@ services:
       timeout: 5s
       retries: 10
       start_period: 10s
+    networks:
+      - pm_network
 
   postgres:
     image: postgres:15-alpine
@@ -35,6 +37,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - pm_network
 
   mongodb:
     image: mongo:latest
@@ -51,6 +55,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - pm_network
 
   api-gateaway:
     build:
@@ -72,8 +78,14 @@ services:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASS}@pm_postgres:5432/${POSTGRES_DB}?schema=public
       - MONGO_URI=mongodb://${MONGO_USER}:${MONGO_PASS}@pm_mongodb:27017/predictive_maintenance?authSource=admin
       - RABBITMQ_URL=amqp://${RABBIT_USER}:${RABBIT_PASS}@pm_rabbitmq:5672
+    networks:
+      - pm_network
 
 volumes:
   rabbitmq_data:
   postgres_data:
   mongo_data:
+
+networks:
+  pm_network:
+    driver: bridge
