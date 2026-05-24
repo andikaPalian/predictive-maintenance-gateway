@@ -45,7 +45,7 @@ async def heal_check(request: Request):
     conn = request.state.rmq_conn
 
     return {
-        "service": "ML Anomaly Engine",
+        "service": "ML Predictive Maintenance Engine (Anomaly & RUL)",
         "status": "HEALTH",
         "rabbitmq_status": (
             "Connected" if conn and not conn.is_closed else "Disconnected"
