@@ -1,7 +1,8 @@
 import json
 import asyncio
 import aio_pika
-from src.ml_engine.predictor import AnomalyPredictor
+from collections import deque
+from src.ml_engine.predictor import AnomalyPredictor, RULPredictor
 from src.database.mongo_dao import MongoDAO
 from src.utils.logger import get_logger
 from src.config.settings import settings
@@ -14,10 +15,12 @@ class TelemetryConsumer:
         self.rabbitmq_url = settings.RABBITMQ_URL
         self.consume_queue = settings.CONSUME_QUEUE
         self.publish_queue = settings.PUBLISH_QUEUE
-        self.predictor = AnomalyPredictor()
+        self.anomaly_predictor = AnomalyPredictor()
+        self.rul_predictor = RULPredictor()
         self.mongo_dao = MongoDAO()
         self.connection = None
         self.channel = None
+        self.sensor_buffer = {}
 
     async def process_message(self, message: aio_pika.abc.AbstractIncomingMessage):
         async with message.process():
@@ -30,9 +33,35 @@ class TelemetryConsumer:
                 vibration = metrics.get("vibration", 0.0)
                 rpm = metrics.get("rpm", 0.0)
 
-                prediction_result = await asyncio.to_thread(
-                    self.predictor.predict, temperature, vibration, rpm
+                anomaly_result = await asyncio.to_thread(
+                    self.anomaly_predictor.predict, temperature, vibration, rpm
                 )
+
+                if equipment_id not in self.sensor_buffer:
+                    self.sensor_buffer[equipment_id] = deque(maxlen=50)
+
+                self.sensor_buffer[equipment_id].append([temperature, vibration, rpm])
+
+                rul_result = None
+                rul_value = -1.0
+
+                if len(self.sensor_buffer[equipment_id]) == 50:
+                    sequence = list(self.sensor_buffer[equipment_id])
+                    rul_result = await asyncio.to_thread(
+                        self.rul_predictor.predict, sequence
+                    )
+
+                    if rul_result.get("success"):
+                        rul_value = rul_result.get("rul_value")
+
+                unified_predictions = {
+                    "is_anomaly": anomaly_result.get("is_anomaly", False),
+                    "anomaly_status": anomaly_result.get("status", "HEALTHY"),
+                    "rul_value": rul_value,
+                    "rul_status": (
+                        rul_result.get("status", "HEALTHY") if rul_result else "PENDING"
+                    ),
+                }
 
                 await self.mongo_dao.save_prediction(
                     equipment_id=equipment_id,
@@ -41,38 +70,46 @@ class TelemetryConsumer:
                         "vibration": vibration,
                         "rpm": rpm,
                     },
-                    prediction_result=prediction_result,
+                    prediction_result=unified_predictions,
                 )
 
-                if prediction_result.get("is_anomaly"):
+                if anomaly_result.get("is_anomaly"):
                     logger.warning(
-                        f"DANGER! Anomaly detected on Machine {equipment_id}."
+                        f"DANGER! Anomaly detected on Machine {equipment_id[:8]}."
                         f"Temperature: {temperature}°C, Vibration: {vibration}, RPM: {rpm}"
-                        f"Status: {prediction_result.get('status')}"
                     )
 
-                    alert_payload = {
-                        "equipmentId": equipment_id,
-                        "severity": "CRITICAL",
-                        "message": f"AI ML ENGINE detect critical anomaly! Temperature: {temperature}°C, Vibration: {vibration}, RPM: {rpm}",
-                        "metrics": metrics,
-                        "timestamps": body.get("timestamp"),
-                    }
+                is_danger = anomaly_result.get("is_anomaly", False)
+                alert_payload = {
+                    "equipmentId": equipment_id,
+                    "severity": "CRITICAL" if is_danger else "INFO",
+                    "message": (
+                        f"AI ML ENGINE detect critical anomaly! Temperature: {temperature}°C, Vibration: {vibration}, RPM: {rpm}"
+                        if is_danger
+                        else f"AI Engine Update. RUL: {rul_value if rul_value != -1.0 else 'Calculating'} cycles"
+                    ),
+                    "metrics": metrics,
+                    "timestamps": body.get("timestamp"),
+                    "ai_analysis": unified_predictions,
+                }
 
-                    if self.channel:
-                        await self.channel.default_exchange.publish(
-                            aio_pika.Message(
-                                body=json.dumps(alert_payload).encode("utf-8"),
-                                content_type="application/json",
-                            ),
-                            routing_key=self.publish_queue,
-                        )
+                if self.channel:
+                    await self.channel.default_exchange.publish(
+                        aio_pika.Message(
+                            body=json.dumps(alert_payload).encode("utf-8"),
+                            content_type="application/json",
+                        ),
+                        routing_key=self.publish_queue,
+                    )
 
-                        logger.info(
-                            f"Danger sign send to Node.js using queue '{self.publish_queue}'"
-                        )
+                if rul_value != -1.0:
+                    logger.info(
+                        f"[NORMAL] {equipment_id[:8]} | RUL: {rul_value} | Temp: {temperature} | Vib: {vibration} | RPM: {rpm}"
+                    )
                 else:
-                    logger.info(f"Machine {equipment_id} is running normaly")
+                    logger.debug(
+                        f"Collectiong data {equipment_id[:8]}... ({len(self.sensor_buffer[equipment_id])}/50)"
+                    )
             except Exception as e:
                 logger.error(
                     f"Failed to process telemetry message: {str(e)}", exc_info=True
