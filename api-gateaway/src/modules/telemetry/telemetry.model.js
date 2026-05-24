@@ -6,7 +6,7 @@ const telemetrySchema = new mongoose.Schema(
       type: String,
       required: true,
       index: true,
-      description: "Ralating to UUID in PostgreSQL equipment table",
+      description: "Relating to UUID in PostgreSQL equipment table",
     },
     timestamp: {
       type: Date,
@@ -30,12 +30,6 @@ const telemetrySchema = new mongoose.Schema(
       type: String,
       enum: ["ONLINE", "OFFLINE", "ERROR"],
       default: "ONLINE",
-    },
-    syncStatus: {
-      type: String,
-      enum: ["PENDING", "SYNCED", "FAILED"],
-      default: "PENDING",
-      index: true,
     },
   },
   {
