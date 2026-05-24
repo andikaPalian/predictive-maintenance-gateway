@@ -1,0 +1,18 @@
+# Mengabaikan environment dan cache lokal
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Mengabaikan file env (karena disuntik dari docker-compose)
+.env
+
+# Mengabaikan log lokal
+logs/
+*.log
+
+# Mengabaikan file git dan IDE
+.git/
+.vscode/
+.idea/
