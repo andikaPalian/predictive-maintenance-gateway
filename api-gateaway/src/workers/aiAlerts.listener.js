@@ -1,4 +1,5 @@
 import { consumeFromQueue } from "../config/rabbitmq.js";
+import { getIO } from "../config/socket.js";
 import * as alertService from "../modules/alerts/alert.service.js";
 import logger from "../utils/logger.js";
 
@@ -18,8 +19,8 @@ export const startAlertListener = async () => {
         logger.info(`[WORKER] AI Alert Auto-Escalated for Equipment: ${payload.equipmentId}`);
       }
 
-      // TODO: Broadcast ke Frontend via WebSocket
-      // global.io.emit("ai-telemetry-update", payload);
+      // Websocket notification
+      getIO().to(`equipment-${payload.equipmentId}`).emit("ai-telemetry-update", payload);
 
       // Tell RABBITMQ the task is done
       channel.ack(msg);

@@ -1,3 +1,4 @@
+import http from "http";
 import express from "express";
 import "dotenv/config";
 import morgan from "morgan";
@@ -13,9 +14,11 @@ import { equipmentRouter } from "./modules/equipment/equipment.routes.js";
 import { maintenanceRouter } from "./modules/maintenance/maintenance.routes.js";
 import { alertRouter } from "./modules/alerts/alert.routes.js";
 import { startAlertListener } from "./workers/aiAlerts.listener.js";
+import { initSocket } from "./config/socket.js";
 
 const app = express();
 const port = process.env.PORT || 3000;
+const server = http.createServer(app);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -34,6 +37,8 @@ app.use("/api/alerts", alertRouter);
 
 app.use(errorHandler);
 
+initSocket(server);
+
 const startServer = async () => {
   try {
     await connectDb();
@@ -41,8 +46,8 @@ const startServer = async () => {
     await startAlertListener();
     startTelemetryRetryWorker();
 
-    app.listen(port, () => {
-      logger.info(`API Gateway is running on http://localhost:${port}`);
+    server.listen(port, () => {
+      logger.info(`API Gateway & Websocket is running on http://localhost:${port}`);
     });
   } catch (error) {
     logger.error(`Failed to start server: ${error.message}`);
