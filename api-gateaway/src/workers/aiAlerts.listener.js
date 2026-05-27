@@ -20,7 +20,7 @@ export const startAlertListener = async () => {
       }
 
       // Websocket notification
-      getIO().to(`equipment-${payload.equipmentId}`).emit("ai-telemetry-update", payload);
+      getIO().to(payload.equipmentId).emit("ai-telemetry-update", payload);
 
       // Tell RABBITMQ the task is done
       channel.ack(msg);
