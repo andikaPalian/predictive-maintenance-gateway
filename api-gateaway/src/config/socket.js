@@ -15,7 +15,10 @@ export const initSocket = (server) => {
     logger.info(`[WEBSOCKET] Client/Postman connected: ${socket.id}`);
 
     socket.on("subscribe-equipment", (equipmentId) => {
-      socket.join(`equipment-${equipmentId}`);
+      const cleanId =
+        typeof equipmentId === "string" ? equipmentId.replace(/(^["']|["']$)/g, "") : equipmentId;
+
+      socket.join(cleanId);
       logger.info(
         `[WEBSOCKET] Client ${socket.id} subscribed to equipment equipment-${equipmentId}`,
       );
