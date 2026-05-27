@@ -117,10 +117,34 @@ services:
           # Minimum RAM guarantee
           memory: 256M
 
+  grafana:
+    image: grafana/grafana:10.4.2
+    container_name: pm_grafana
+    ports:
+      - "3001:3000"
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - pm_network
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5" 
+          memory: 512M
+
 volumes:
   rabbitmq_data:
   postgres_data:
   mongo_data:
+  grafana_data:
 
 networks:
   pm_network:
