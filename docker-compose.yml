@@ -78,6 +78,7 @@ services:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASS}@pm_postgres:5432/${POSTGRES_DB}?schema=public
       - MONGO_URI=mongodb://${MONGO_USER}:${MONGO_PASS}@pm_mongodb:27017/predictive_maintenance?authSource=admin
       - RABBITMQ_URL=amqp://${RABBIT_USER}:${RABBIT_PASS}@pm_rabbitmq:5672
+      - AI_ALERTS_QUEUE=anomaly_alerts
     networks:
       - pm_network
 
